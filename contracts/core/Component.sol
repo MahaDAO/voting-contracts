@@ -26,8 +26,8 @@ abstract contract Component is UUPSUpgradeable, AdaptiveERC165, Permissions {
   event SetTrustedForwarder(address _newForwarder);
 
   /// @dev Used for UUPS upgradability pattern
-  function __Component_init(IDAO _dao, address _trustedForwarder) internal virtual {
-    __Permission_init(_dao);
+  function componentInit(IDAO _dao, address _trustedForwarder) internal virtual {
+    permissionInit(_dao);
 
     if (_trustedForwarder != address(0)) {
       _setTrustedForwarder(_trustedForwarder);
@@ -53,7 +53,11 @@ abstract contract Component is UUPSUpgradeable, AdaptiveERC165, Permissions {
   function _authorizeUpgrade(address) internal virtual override auth(UPGRADE_ROLE) {}
 
   /// @dev Fallback to handle future versions of the ERC165 standard.
-  fallback() external {
+  fallback() external payable {
+    _handleCallback(msg.sig, _msgData()); // WARN: does a low-level return, any code below would be unreacheable
+  }
+
+  receive() external payable {
     _handleCallback(msg.sig, _msgData()); // WARN: does a low-level return, any code below would be unreacheable
   }
 }

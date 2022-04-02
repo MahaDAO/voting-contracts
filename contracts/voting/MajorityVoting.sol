@@ -31,7 +31,7 @@ abstract contract MajorityVoting is IMajorityVoting, Component, TimeHelpers {
   /// @param _participationRequiredPct The minimal required participation in percent.
   /// @param _supportRequiredPct The minimal required support in percent.
   /// @param _minDuration The minimal duration of a vote
-  function __MajorityVoting_init(
+  function majorityVotingInit(
     IDAO _dao,
     address _gsnForwarder,
     uint64 _participationRequiredPct,
@@ -39,9 +39,7 @@ abstract contract MajorityVoting is IMajorityVoting, Component, TimeHelpers {
     uint64 _minDuration
   ) internal initializer {
     _validateAndSetSettings(_participationRequiredPct, _supportRequiredPct, _minDuration);
-
-    __Component_init(_dao, _gsnForwarder);
-
+    componentInit(_dao, _gsnForwarder);
     emit UpdateConfig(_participationRequiredPct, _supportRequiredPct, _minDuration);
   }
 
@@ -52,7 +50,6 @@ abstract contract MajorityVoting is IMajorityVoting, Component, TimeHelpers {
     uint64 _minDuration
   ) external override auth(MODIFY_VOTE_CONFIG) {
     _validateAndSetSettings(_participationRequiredPct, _supportRequiredPct, _minDuration);
-
     emit UpdateConfig(_participationRequiredPct, _supportRequiredPct, _minDuration);
   }
 
@@ -154,9 +151,7 @@ abstract contract MajorityVoting is IMajorityVoting, Component, TimeHelpers {
   /// @param _voteId the vote Id
   function _execute(uint256 _voteId) internal virtual {
     bytes[] memory execResults = dao.execute(_voteId, votes[_voteId].actions);
-
     votes[_voteId].executed = true;
-
     emit ExecuteVote(_voteId, execResults);
   }
 
@@ -172,19 +167,13 @@ abstract contract MajorityVoting is IMajorityVoting, Component, TimeHelpers {
   function _canExecute(uint256 _voteId) internal view virtual returns (bool) {
     Vote storage vote_ = votes[_voteId];
 
-    if (vote_.executed) {
-      return false;
-    }
+    if (vote_.executed) return false;
 
     // Voting is already decided
-    if (_isValuePct(vote_.yea, vote_.votingPower, vote_.supportRequiredPct)) {
-      return true;
-    }
+    if (_isValuePct(vote_.yea, vote_.votingPower, vote_.supportRequiredPct)) return true;
 
     // Vote ended?
-    if (_isVoteOpen(vote_)) {
-      return false;
-    }
+    if (_isVoteOpen(vote_)) return false;
 
     uint256 totalVotes = vote_.yea + vote_.nay;
 
@@ -195,14 +184,10 @@ abstract contract MajorityVoting is IMajorityVoting, Component, TimeHelpers {
         vote_.votingPower,
         vote_.participationRequiredPct
       )
-    ) {
-      return false;
-    }
+    ) return false;
 
     // Has enough support?
-    if (!_isValuePct(vote_.yea, totalVotes, vote_.supportRequiredPct)) {
-      return false;
-    }
+    if (!_isValuePct(vote_.yea, totalVotes, vote_.supportRequiredPct)) return false;
 
     return true;
   }
@@ -227,10 +212,7 @@ abstract contract MajorityVoting is IMajorityVoting, Component, TimeHelpers {
     uint256 _total,
     uint256 _pct
   ) internal pure returns (bool) {
-    if (_total == 0) {
-      return false;
-    }
-
+    if (_total == 0) return false;
     uint256 computedPct = (_value * PCT_BASE) / _total;
     return computedPct > _pct;
   }

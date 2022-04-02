@@ -41,7 +41,7 @@ abstract contract Permissions is Initializable, BaseRelayRecipient {
     _;
   }
 
-  function __Permission_init(IDAO _dao) internal virtual initializer {
+  function permissionInit(IDAO _dao) internal virtual initializer {
     dao = _dao;
   }
 
