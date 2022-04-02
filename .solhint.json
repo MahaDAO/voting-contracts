@@ -5,7 +5,7 @@
     "reason-string": ["off"],
     "avoid-low-level-calls": ["off"],
     "not-rely-on-time": "off",
-    "compiler-version": ["error", "^0.8.0"],
+    "compiler-version": ["error", "^0.8.4"],
     "func-visibility": ["warn", {
       "ignoreConstructors": true
     }]
