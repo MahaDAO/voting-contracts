@@ -4,7 +4,7 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import hre, { ethers } from 'hardhat';
-import { wait } from './utils';
+import { wait } from '../utils';
 
 async function main() {
   const admin = '0xecce08c2636820a81fc0c805dbdc7d846636bbc4';
