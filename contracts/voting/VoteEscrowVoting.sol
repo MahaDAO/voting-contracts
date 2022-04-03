@@ -4,15 +4,20 @@
 
 pragma solidity ^0.8.4;
 
-import '@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol';
-import './voting/MajorityVoting.sol';
+import './MajorityVoting.sol';
+
+interface IVoteEscrow {
+  function totalSupply() external view returns (uint256);
+
+  function balanceOfAt(address who, uint256 when) external view returns (uint256);
+}
 
 /// @title A component for ERC-20 token voting
 /// @author Giorgi Lagidze, Samuel Furter - Aragon Association - 2021-2022
 /// @notice The majority voting implementation using an ERC-20 token
 /// @dev This contract inherits from `MajorityVoting` and implements the `IMajorityVoting` interface
-contract ERC20Voting is MajorityVoting {
-  ERC20VotesUpgradeable public token;
+contract VoteEscrowVoting is MajorityVoting {
+  IVoteEscrow public voteEscrow;
 
   /// @notice Initializes the component
   /// @dev This is required for the UUPS upgradability pattern
@@ -21,16 +26,16 @@ contract ERC20Voting is MajorityVoting {
   /// @param _participationRequiredPct The minimal required participation in percent.
   /// @param _supportRequiredPct The minimal required support in percent.
   /// @param _minDuration The minimal duration of a vote
-  /// @param _token The ERC20 token used for voting
+  /// @param _voteEscrow The vote escrow used for voting
   function initialize(
     IDAO _dao,
     address _gsnForwarder,
     uint64 _participationRequiredPct,
     uint64 _supportRequiredPct,
     uint64 _minDuration,
-    ERC20VotesUpgradeable _token
+    IVoteEscrow _voteEscrow
   ) public initializer {
-    __MajorityVoting_init(
+    majorityVotingInit(
       _dao,
       _gsnForwarder,
       _participationRequiredPct,
@@ -38,7 +43,7 @@ contract ERC20Voting is MajorityVoting {
       _minDuration
     );
 
-    token = _token;
+    voteEscrow = _voteEscrow;
   }
 
   /// @notice Returns the version of the GSN relay recipient
@@ -64,7 +69,7 @@ contract ERC20Voting is MajorityVoting {
   ) external override returns (uint256 voteId) {
     uint64 snapshotBlock = getBlockNumber64() - 1;
 
-    uint256 votingPower = token.getPastTotalSupply(snapshotBlock);
+    uint256 votingPower = voteEscrow.totalSupply();
     if (votingPower == 0) revert VotePowerZero();
 
     voteId = votesLength++;
@@ -118,7 +123,7 @@ contract ERC20Voting is MajorityVoting {
     Vote storage vote_ = votes[_voteId];
 
     // This could re-enter, though we can assume the governance token is not malicious
-    uint256 voterStake = token.getPastVotes(_voter, vote_.snapshotBlock);
+    uint256 voterStake = voteEscrow.balanceOfAt(_voter, block.timestamp);
     VoterState state = vote_.voters[_voter];
 
     // If voter had previously voted, decrease count
@@ -154,6 +159,6 @@ contract ERC20Voting is MajorityVoting {
   /// @return True if the given voter can participate a certain vote, false otherwise
   function _canVote(uint256 _voteId, address _voter) internal view override returns (bool) {
     Vote storage vote_ = votes[_voteId];
-    return _isVoteOpen(vote_) && token.getPastVotes(_voter, vote_.snapshotBlock) > 0;
+    return _isVoteOpen(vote_) && voteEscrow.balanceOfAt(_voter, block.timestamp) > 0;
   }
 }
