@@ -6,10 +6,23 @@ pragma solidity ^0.8.4;
 
 import './MajorityVoting.sol';
 
-interface IVoteEscrow {
-  function totalSupply() external view returns (uint256);
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
+ * the optional functions; to access them see {ERC20Detailed}.
+ */
+interface IVotingEscrow {
+  function totalSupplyWithoutDecay() external view returns (uint256);
 
-  function balanceOfAt(address who, uint256 when) external view returns (uint256);
+  function balanceOf(address account) external view returns (uint256);
+
+  function balanceOfAt(address account, uint256 timestamp) external view returns (uint256);
+
+  function totalSupply(uint256 timestamp) external view returns (uint256);
+
+  function balanceOfWithDecay(address account, uint256 timestamp)
+    external
+    view
+    returns (uint256);
 }
 
 /// @title A component for ERC-20 token voting
@@ -17,7 +30,7 @@ interface IVoteEscrow {
 /// @notice The majority voting implementation using an ERC-20 token
 /// @dev This contract inherits from `MajorityVoting` and implements the `IMajorityVoting` interface
 contract VoteEscrowVoting is MajorityVoting {
-  IVoteEscrow public voteEscrow;
+  IVotingEscrow public voteEscrow;
 
   /// @notice Initializes the component
   /// @dev This is required for the UUPS upgradability pattern
@@ -33,7 +46,7 @@ contract VoteEscrowVoting is MajorityVoting {
     uint64 _participationRequiredPct,
     uint64 _supportRequiredPct,
     uint64 _minDuration,
-    IVoteEscrow _voteEscrow
+    IVotingEscrow _voteEscrow
   ) public initializer {
     majorityVotingInit(
       _dao,
@@ -69,7 +82,7 @@ contract VoteEscrowVoting is MajorityVoting {
   ) external override returns (uint256 voteId) {
     uint64 snapshotBlock = getBlockNumber64() - 1;
 
-    uint256 votingPower = voteEscrow.totalSupply();
+    uint256 votingPower = voteEscrow.totalSupply(block.timestamp);
     if (votingPower == 0) revert VotePowerZero();
 
     voteId = votesLength++;
