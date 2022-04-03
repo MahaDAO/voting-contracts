@@ -36,7 +36,7 @@ contract Timelock {
 
   uint256 public constant GRACE_PERIOD = 14 days;
   uint256 public constant MINIMUM_DELAY = 2 days;
-  uint256 public constant MAXIMUM_DELAY = 30 days;
+  uint256 public constant MAXIMUM_DELAY = 180 days;
 
   address public admin;
   address public pendingAdmin;
@@ -161,7 +161,6 @@ contract Timelock {
     require(success, 'Timelock::executeTransaction: Transaction execution reverted.');
 
     emit ExecuteTransaction(txHash, target, value, signature, data, eta);
-
     return returnData;
   }
 
